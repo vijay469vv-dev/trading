@@ -1,0 +1,42 @@
+# Environment & secrets
+.env
+*.env
+tunnel_config.bat
+
+# start.bat has API tokens — keep local only
+start.bat
+
+# Logs & trade data
+logs/
+*.log
+
+# Large binaries
+ngrok.exe
+cloudflared.exe
+ngrok.zip
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# Node
+node_modules/
+start_tunnel.js
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
