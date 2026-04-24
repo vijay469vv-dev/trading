@@ -102,6 +102,8 @@ class PaperTrader:
         self._save()
         return trade
 
+    PROFIT_TARGET_USD: float = 1.0   # close trade as soon as unrealized profit hits $1
+
     def update_trades(self, symbol: str, current_price: float) -> list[Trade]:
         """Check open trades for SL/TP hits. Returns list of closed trades."""
         just_closed = []
@@ -112,18 +114,26 @@ class PaperTrader:
                 remaining.append(trade)
                 continue
 
-            hit_tp = hit_sl = False
+            # Unrealized P&L at current price
             if trade.direction == "buy":
-                hit_tp = current_price >= trade.take_profit
+                unrealized = (current_price - trade.entry_price) * trade.size
+                hit_tp = current_price >= trade.take_profit or unrealized >= self.PROFIT_TARGET_USD
                 hit_sl = current_price <= trade.stop_loss
             else:
-                hit_tp = current_price <= trade.take_profit
+                unrealized = (trade.entry_price - current_price) * trade.size
+                hit_tp = current_price <= trade.take_profit or unrealized >= self.PROFIT_TARGET_USD
                 hit_sl = current_price >= trade.stop_loss
 
             if hit_tp or hit_sl:
-                exit_price = trade.take_profit if hit_tp else trade.stop_loss
+                # $1 profit cap exits at market price; price-based exits use exact level
+                if hit_sl:
+                    exit_price = trade.stop_loss
+                elif unrealized >= self.PROFIT_TARGET_USD:
+                    exit_price = current_price
+                else:
+                    exit_price = trade.take_profit
                 trade.close(exit_price)
-                self.balance += trade.margin + trade.pnl   # return margin + realised PnL
+                self.balance += trade.margin + trade.pnl
                 self.closed_trades.append(trade)
                 just_closed.append(trade)
             else:
